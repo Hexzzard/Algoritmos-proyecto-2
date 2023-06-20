@@ -15,6 +15,18 @@ def calcular_fitness(vector):
 def normalizar(vector):
     return vector / np.sum(vector)
 
+def Crear_Cromosoma_Movimiento (): #crea un array con valores aleatorios indicando la % de moverse a un lado
+    #1: N, 2: NE, 3: E, 4: SE, 5: S, 6: SO, 7: O, 8: NO, 9: nada
+    cromosoma_Movimiento = []
+    for i in range(9):
+        valor = np.random.randint(0, 100)
+        cromosoma_Movimiento.append(valor)
+    
+def normalizar_vector(vector):
+    magnitud = np.linalg.norm(vector)
+    vector_normalizado = vector / magnitud
+    return vector_normalizado
+
 # Crear un cromosoma aleatorio
 def crear_cromosoma():
     return np.random.rand(NUM_GENES)
