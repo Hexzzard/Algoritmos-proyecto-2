@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import random
 
 # Variables globales, definen TODO
 largo = 20
@@ -8,6 +9,7 @@ porcentaje_area_de_aparicion = 20
 habitantes_primera_generacion = 20
 numero_de_movimientos = 40
 tiempo_entre_movimientos = 0.1
+agresividad = 1
 
 class Terreno:
     def __init__(self, largo, alto): #constructor
@@ -45,6 +47,7 @@ class Habitante:
         self.cromosoma  = Crear_Cromosoma_Movimiento()
         self.clase = np.argmax(self.cromosoma) #la clase es la direccion donde tiene mas probabilidad de moverse
         
+        self.combate = agresividad*random.random()/2 #probabilidad de cada individuo de ganar una pelea
         self.posicionar_habitante(largo, alto, porcentaje_area_de_aparicion)
 
     def posicionar_habitante(self, largo, alto, porcentaje_area_de_aparicion): #ubica al habitante en el mapa
@@ -150,6 +153,22 @@ def sobrevivientes (): #busca los sobrevivientes
         except KeyError: #ignoramos los errores
             continue
     return sobrevivientes
+
+def pelear(habitante1, habitante2): #funcion del felipe /matar habitantes
+    #te añadi un parametro a los habitantes 'combate'
+    #es como la probabilidad de que tiene ganar cada individuo una pelea
+    #arreglo de 3 valores, % de ganar habitante 1, % de ganar habitante 2, % de empate
+    cromosoma = [habitante1.combate, habitante2.combate, 1-habitante1.combate-habitante2.combate]
+    accion = seleccionar_posicion_aleatoria(cromosoma)  # Seleccionar al azar el índice del gen perdedor
+    if accion == 0:
+        poblacion.remove(habitante1)  # Eliminar al gen perdedor 1
+    if accion == 1:
+        poblacion.remove(habitante2)  # Eliminar al gen perdedor 2
+    #si es 2 es empate y no hace nada
+
+    #ahi lo terminas, fijate lo de terreno.diccionario_coordenadas, ese es el seleccionador
+    #le das una coordenada y te devuelve el individuo
+    #modifica el movimiento, ahora si pilla a alguien mandalo a pelear
 
 #variables utilizadas dentro del ciclo
 generacion = 1
