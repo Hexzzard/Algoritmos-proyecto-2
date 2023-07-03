@@ -42,13 +42,14 @@ class Habitante:
     def __init__(self, numero): #constructor
         self.numero = numero #el numero que ocupa dentro del arreglo de poblacion
         self.inicializarHabitante()
-        
+        self.movimientos = 0
+
     def inicializarHabitante(self): #define los atributos que no dependen del constructor
-        self.cromosoma  = Crear_Cromosoma_Movimiento()
+        self.cromosoma = Crear_Cromosoma_Movimiento()
         self.clase = np.argmax(self.cromosoma) #la clase es la direccion donde tiene mas probabilidad de moverse
         
         self.combate = agresividad*random.random()/2 #probabilidad de cada individuo de ganar una pelea
-        self.posicionar_habitante(largo, alto, porcentaje_area_de_aparicion)
+        self.posicionar_habitante(alto, largo, porcentaje_area_de_aparicion)
 
     def posicionar_habitante(self, largo, alto, porcentaje_area_de_aparicion): #ubica al habitante en el mapa
         limite_largo = round(largo * (porcentaje_area_de_aparicion / 100)) #se define el area de aparicion
@@ -57,7 +58,6 @@ class Habitante:
             posible_posicion_y = np.random.randint(0, alto)
             if terreno.matriz[posible_posicion_y, posible_posicion_x] == 0:
                 break
-
         self.coordenada_x = posible_posicion_x #asignamos las coordenadas al habitante
         self.coordenada_y = posible_posicion_y
         terreno.matriz[self.coordenada_y, self.coordenada_x] = self.clase #registramos al habitante en el terreno
@@ -65,14 +65,16 @@ class Habitante:
         coordenada = f'({self.coordenada_x},{self.coordenada_y})' #string que indica la posicion en la que se encuentra
         terreno.diccionario_coordenadas[coordenada] = self.numero #guardamos la posicion en el registro
 
+
     def moverse(self): #logica de movimiento del habitante
         direccion_movimiento = seleccionar_posicion_aleatoria(self.cromosoma) #tomamos una posicion aleatoria para moverse
         vector_movimiento = diccionario_vector_movimientos[direccion_movimiento] #traducimos la direccion a un vector con ayuda de un diccionario
         
         if (self.coordenada_x != largo-1): #se mueve siempre cuando el movimiento sea valido, y si es que no ha llegado a la zona segura
+            self.movimientos += 1
             if 0 <= self.coordenada_y + vector_movimiento[0] < alto and 0 <= self.coordenada_x + vector_movimiento[1] < largo:
                 if terreno.matriz[self.coordenada_y + vector_movimiento[0]][self.coordenada_x + vector_movimiento[1]] == 0:
-        
+
                     terreno.matriz[self.coordenada_y][self.coordenada_x] = 0 #borramos la posicion anterior y registramos la nueva
                     self.coordenada_x = self.coordenada_x + vector_movimiento[1]
                     self.coordenada_y = self.coordenada_y + vector_movimiento[0]
@@ -105,13 +107,16 @@ diccionario_movimientos = { #traduce la posicion a moverse en un string con la p
     8: 'No movimiento'
 }
 
+def fitness(habitante):
+    fit = ((largo-1)**2)/(habitante.movimientos)**2
+    return fit
+
 def Crear_Cromosoma_Movimiento(): #crea una lista con la probabilidad de moverse a cada posicion
     cromosoma_Movimiento = []
     for i in range(9): #creamos una lista con valores aleatorios del 0 al 100
         valor = np.random.randint(0, 100)
         cromosoma_Movimiento.append(valor)
     cromosoma_Movimiento = normalizar(cromosoma_Movimiento) #normalizamos el vector
-
     return cromosoma_Movimiento
 
 def normalizar(vector): #normaliza un vector / suma total de sus componentes = 1
@@ -135,12 +140,37 @@ def crear_primera_poblacion(): #crea la primera poblacion de habitantes
         poblacion.append(habitante)
     return poblacion 
 
-def crear_siguiente_poblacion(): #crea la primera poblacion de habitantes
-    poblacion = [] #arreglo que contiene a la poblacion
-    for i in range(habitantes_primera_generacion):
+def crear_siguiente_poblacion(sobrevivientes): #crea la siguiente poblacion
+    poblacion = []  # arreglo que contiene a la poblacion
+    fittest = 999
+    if(len(sobrevivientes) == 1):
+        for i in range(habitantes_primera_generacion):
+            habitante = Habitante(i)
+            poblacion.append(habitante)
+        ultimo_habitante = Habitante(habitantes_primera_generacion)
+        ultimo_habitante.cromosoma = sobrevivientes[0].cromosoma
+        poblacion.append(ultimo_habitante)
+        return poblacion
+
+    for i in range(len(sobrevivientes)):
+        if (sobrevivientes[i].movimientos < fittest):
+            fittest = sobrevivientes[i].movimientos
+            fitIndex = i
+    nueva_poblacion = []
+    for i in range(int(habitantes_primera_generacion/2)):
+        dos_sobrevivientes = seleccionar_habitantes(sobrevivientes)
+        nueva_poblacion.append(cruzar_cromosomas(dos_sobrevivientes)[0])
+        nueva_poblacion.append(cruzar_cromosomas(dos_sobrevivientes)[1])
+
+    for i in range(len(nueva_poblacion)):
         habitante = Habitante(i)
+        habitante.cromosoma = nueva_poblacion[i]
         poblacion.append(habitante)
-    return poblacion 
+
+    ultimo_habitante = Habitante(habitantes_primera_generacion)
+    ultimo_habitante.cromosoma = sobrevivientes[fitIndex].cromosoma
+    poblacion.append(ultimo_habitante)
+    return poblacion
 
 def sobrevivientes (): #busca los sobrevivientes
     sobrevivientes = [] 
@@ -153,6 +183,27 @@ def sobrevivientes (): #busca los sobrevivientes
         except KeyError: #ignoramos los errores
             continue
     return sobrevivientes
+
+def probabilidad(sobrevivientes):
+    probabilidad = []
+    for i in range(len(sobrevivientes)):
+        probabilidad.append(fitness(sobrevivientes[i]))
+    return normalizar(probabilidad)
+
+def seleccionar_habitantes(sobrevivientes):
+    return np.random.choice(sobrevivientes, size=2, replace=False, p=probabilidad(sobrevivientes))
+
+def cruzar_cromosomas(dos_sobrevivientes):
+    dna_index = np.random.randint(1, 9)
+    cromosoma_hijo1 = []
+    cromosoma_hijo2 = []
+    for i in range(dna_index):
+        cromosoma_hijo1.append(dos_sobrevivientes[0].cromosoma[i])
+        cromosoma_hijo2.append(dos_sobrevivientes[1].cromosoma[i])
+    for i in range(dna_index, 9):
+        cromosoma_hijo1.append(dos_sobrevivientes[0].cromosoma[i])
+        cromosoma_hijo2.append(dos_sobrevivientes[1].cromosoma[i])
+    return normalizar(cromosoma_hijo1), normalizar(cromosoma_hijo2)
 
 def pelear(habitante1, habitante2): #funcion del felipe /matar habitantes
     #te añadi un parametro a los habitantes 'combate'
@@ -185,8 +236,9 @@ while True:
         if (generacion != 1):
             print('no hubo supervivientes')
     else:
-        print(f'sobrevivientes: {poblacion_sobrevivientes}') 
-        poblacion = crear_siguiente_poblacion() #por implementar
+        print(f'sobrevivientes: {poblacion_sobrevivientes}')
+        enviar_pobla = [poblacion[i] for i in poblacion_sobrevivientes]
+        poblacion = crear_siguiente_poblacion(enviar_pobla) #por implementar
     
     for i in range (numero_de_movimientos): 
         for habitante in poblacion: #en cada turno movemos a todos los habitantes de la poblacion
@@ -203,23 +255,5 @@ while True:
     if(not juego_activo): #para salir del ciclo definitivamente
         break
     poblacion_sobrevivientes = sobrevivientes()
-
     generacion +=1
 
-#Falta:
-#terminar el gameloop cuando se llege a la zona segura
-#mostrar un solo grafico, se puede hacer pero hay que convertirlo en asyncronico, hice un par de intentos pero no me salio
-#logica de segundas generaciones
-#lo que sea que halla que hacer con el fitness
-
-
-#Opcionales:
-#pintar a los cuadrados segun cual sea la direccion con mayor probabilidad
-#matar
-#vision
-
-#PD: si añaden parametros opcionales, tiene que ser con genetica, la wea es demostrar si ganan los que tienen o no el gen
-#o por ejemplo los que tienen mayor o menor vision.
-#y estudien la logica de objetos clases en python.
-
-#version lo que hice en 3 horas
