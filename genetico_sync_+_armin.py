@@ -10,6 +10,9 @@ habitantes_primera_generacion = 20
 numero_de_movimientos = 40
 tiempo_entre_movimientos = 0.01
 agresividad = 1
+seed = 42
+random.seed(42)
+np.random.seed(42)
 
 class Terreno:
     def __init__(self, largo, alto): #constructor
@@ -83,8 +86,7 @@ class Habitante:
 
                     coordenada = f'({self.coordenada_x},{self.coordenada_y})' #string que indica la posicion en la que se encuentra
                     terreno.diccionario_coordenadas[coordenada] = self.numero #registramos la posicion en los registros
-                else:
-                    print("choco contra un habitante")
+
                     #funcion_matar()
 diccionario_vector_movimientos = { #traduce la posicion a moverse en un vector
     0: [1, 0],   # Norte

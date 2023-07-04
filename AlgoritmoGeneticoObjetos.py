@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import random
+import time
 
 # Variables globales, definen TODO
 largo = 20
@@ -133,6 +134,9 @@ def crear_primera_poblacion(): #crea la primera poblacion de habitantes
     for i in range(habitantes_primera_generacion):
         habitante = Habitante(i)
         poblacion.append(habitante)
+        habitante.clase = i
+
+    print(len(poblacion))
     return poblacion 
 
 def crear_siguiente_poblacion(): #crea la primera poblacion de habitantes
@@ -199,7 +203,12 @@ while True:
             print('Fin de la muestra')
             juego_activo = False
             break
+    for i in poblacion:
+        print(f"{i.coordenada_x}, {i.coordenada_y}")
 
+    time.sleep(10000)
+    
+    
     if(not juego_activo): #para salir del ciclo definitivamente
         break
     poblacion_sobrevivientes = sobrevivientes()
