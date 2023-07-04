@@ -1,7 +1,27 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import random
-import asyncio
+from matplotlib.colors import ListedColormap
+
+# Definir los colores en formato RGBA
+colors = [(255, 255, 255, 255),      #Terreno
+          (255, 0, 0, 128),          #Rojo
+          (255, 165, 0, 128),        #
+          (255, 255, 0, 128),        #Amarillo 
+          (46, 204, 113, 128),
+          (0, 255, 0, 128),          #Verde
+          (72, 201, 176, 128),
+          (41, 128, 185, 128),       #Azul
+          (142, 68, 173, 128),
+          (127, 140, 141, 128)       #No moverse
+          ]  
+
+#Matplotlib trabaja con valores entre 0 y 1
+colors = [(r/255, g/255, b/255, a/255) for r, g, b, a in colors]
+
+# Crear el cmap personalizado
+cmap = ListedColormap(colors)
+
 # Variables globales, definen TODO
 largo = 20
 alto = 20
@@ -10,6 +30,35 @@ habitantes_primera_generacion = 20
 numero_de_movimientos = 40
 tiempo_entre_movimientos = 0.01
 agresividad = 1
+seed = 42
+
+#constantes globales
+random.seed(seed)
+np.random.seed(seed)
+diccionario_vector_movimientos = { #traduce la posicion a moverse en un vector
+    0: [1, 0],   # Norte
+    1: [1, 1],   # Noreste
+    2: [0, 1],   # Este
+    3: [-1, 1],  # Sureste
+    4: [-1, 0],  # Sur
+    5: [-1, -1], # Suroeste
+    6: [0, -1],  # Oeste
+    7: [1, -1],  # Noroeste
+    8: [0, 0]    # No movimiento
+}
+
+diccionario_movimientos = { #traduce la posicion a moverse en un string con la posicion
+    0: 'Norte',
+    1: 'Noreste',
+    2: 'Este',
+    3: 'Sureste',
+    4: 'Sur',
+    5: 'Suroeste',
+    6: 'Oeste',
+    7: 'Noroeste',
+    8: 'No movimiento'
+}
+
 
 class Terreno:
     def __init__(self, largo, alto): #constructor
@@ -25,7 +74,7 @@ class Terreno:
 
     def MostrarGrafica(self, generacion, movimiento): #muestra la grafica del entorno
         if self.im is None: #si no hay una imagen, se crea 
-            self.im = self.ax.imshow(self.matriz, cmap='Blues', interpolation='nearest', extent=[0, self.largo, 0, self.alto])
+            self.im = self.ax.imshow(self.matriz, cmap=cmap, interpolation='nearest', extent=[0, self.largo, 0, self.alto])
             self.ax.set_xlim(0, self.largo)
             self.ax.set_ylim(0, self.alto)
             self.ax.set_xlabel('Eje X')
@@ -46,7 +95,7 @@ class Habitante:
 
     def inicializarHabitante(self): #define los atributos que no dependen del constructor
         self.cromosoma = Crear_Cromosoma_Movimiento()
-        self.clase = np.argmax(self.cromosoma) #la clase es la direccion donde tiene mas probabilidad de moverse
+        self.clase = np.argmax(self.cromosoma)+1 #la clase es la direccion donde tiene mas probabilidad de moverse
         
         self.combate = agresividad*random.random()/2 #probabilidad de cada individuo de ganar una pelea
         self.posicionar_habitante(alto, largo, porcentaje_area_de_aparicion)
@@ -86,29 +135,6 @@ class Habitante:
                 #else:
                     #print("choco contra un habitante")
                     #funcion_matar()
-diccionario_vector_movimientos = { #traduce la posicion a moverse en un vector
-    0: [1, 0],   # Norte
-    1: [1, 1],   # Noreste
-    2: [0, 1],   # Este
-    3: [-1, 1],  # Sureste
-    4: [-1, 0],  # Sur
-    5: [-1, -1], # Suroeste
-    6: [0, -1],  # Oeste
-    7: [1, -1],  # Noroeste
-    8: [0, 0]    # No movimiento
-}
-
-diccionario_movimientos = { #traduce la posicion a moverse en un string con la posicion
-    0: 'Norte',
-    1: 'Noreste',
-    2: 'Este',
-    3: 'Sureste',
-    4: 'Sur',
-    5: 'Suroeste',
-    6: 'Oeste',
-    7: 'Noroeste',
-    8: 'No movimiento'
-}
 
 def fitness(habitante):
     fit = (numero_de_movimientos)/(habitante.movimientos)# otra forma seria abs(habitante.movimientos-numero_de_movimientos)
