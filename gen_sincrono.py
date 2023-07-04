@@ -216,12 +216,11 @@ def cruzar_cromosomas(dos_sobrevivientes):
     for i in range(dna_index, 9):
         cromosoma_hijo1.append(dos_sobrevivientes[0].cromosoma[i])
         cromosoma_hijo2.append(dos_sobrevivientes[1].cromosoma[i])
-        return normalizar(mutacion(cromosoma_hijo1)), normalizar(mutacion(cromosoma_hijo2))
+    return normalizar(mutacion(cromosoma_hijo1)), normalizar(mutacion(cromosoma_hijo2))
 
 def mutacion(hijo):
-    if random.choice(np.random.randint(1, 20)) == 20:
+    if np.random.randint(1, 20) == 20:
         return hijo
-
     index_modificado = np.random.randint(0, 8)
     valor_modificado = np.random.uniform(-1.0, 1.0)
     if valor_modificado < 0 and valor_modificado * -1 >= hijo[index_modificado]:
