@@ -206,8 +206,9 @@ def crear_siguiente_poblacion(sobrevivientes): #crea la siguiente poblacion
     for i in range(len(sobrevivientes)):
         if i<10:
             dos_sobrevivientes = seleccionar_habitantes(sobrevivientes)
-            nueva_poblacion.append(cruzar_cromosomas(dos_sobrevivientes)[0])
-            nueva_poblacion.append(cruzar_cromosomas(dos_sobrevivientes)[1])
+            cruce_cromo = cruzar_cromosomas(dos_sobrevivientes)
+            nueva_poblacion.append(cruce_cromo[0])
+            nueva_poblacion.append(cruce_cromo[1])
     
     for i in range(len(nueva_poblacion)):
         habitante = Habitante(i)
@@ -219,10 +220,14 @@ def crear_siguiente_poblacion(sobrevivientes): #crea la siguiente poblacion
             poblacion.append(habitante)
     return poblacion
 
+#selecciona 2 sobrevivientes para cruzar sus cromosomas segun un index random, obteniendo de 2 padres, 2 hijos
 def cruzar_cromosomas(dos_sobrevivientes):
-    dna_index = np.random.randint(1, 9)
+    dna_index = np.random.randint(0, 9)
     cromosoma_hijo1 = []
     cromosoma_hijo2 = []
+
+    #si dna_index es 0 o 9, los hijos seran igual a los padres, si no, se cortan los cromosomas de los padres en ese indice,
+    #el hijo 1 será el cromosoma del padre 1 hasta el dna_index + el cromosoma del padre 2 desde el dna index hasta el final
     for i in range(dna_index):
         cromosoma_hijo1.append(dos_sobrevivientes[0].cromosoma[i])
         cromosoma_hijo2.append(dos_sobrevivientes[1].cromosoma[i])
@@ -231,14 +236,15 @@ def cruzar_cromosomas(dos_sobrevivientes):
         cromosoma_hijo2.append(dos_sobrevivientes[1].cromosoma[i])
     return normalizar(mutacion(cromosoma_hijo1)), normalizar(mutacion(cromosoma_hijo2))
 
+#un 5% de probabilidad de mutar cuando se gestan los 2 hijos en cruzar cromosomas
 def mutacion(hijo):
     if np.random.randint(1, 20) == 20:
-        index_modificado = np.random.randint(0, 8)
-        valor_modificado = np.random.uniform(-1.0, 1.0)
-        if valor_modificado < 0 and valor_modificado * -1 >= hijo[index_modificado]:
+        index_modificado = np.random.randint(0, 8)          #cromosoma cualquiera del hijo
+        valor_modificado = np.random.uniform(-1.0, 1.0)     #valor en que se añadirá a ese cromosoma
+        if valor_modificado < 0 and valor_modificado * -1 >= hijo[index_modificado]: #si al sumar el valor ese cromosoma da menor a 0, que se quede en 0
             hijo[index_modificado] = 0
             return hijo
-        hijo[index_modificado] += valor_modificado
+        hijo[index_modificado] += valor_modificado #se suma el valor al cromosoma index_modificado del hijo y se retorna
         return hijo
     return hijo
 
@@ -263,7 +269,7 @@ def probabilidad(sobrevivientes):
         probabilidad.append(fitness(sobrevivientes[i]))
     return normalizar(probabilidad)
 
-def seleccionar_habitantes(sobrevivientes):
+def seleccionar_habitantes(sobrevivientes): #selecciona 2 habitantes distintos con probabilidad p de ser escogidos para cruzarlos
     return np.random.choice(sobrevivientes, size=2, replace=False, p=probabilidad(sobrevivientes))
 
 def graficar_supervivientes_por_generacion(x, y):
@@ -294,8 +300,10 @@ while True:
             
     else:
         print(f'sobrevivientes: {poblacion_sobrevivientes}')
-        enviar_pobla = [poblacion[i] for i in poblacion_sobrevivientes]
-        poblacion = crear_siguiente_poblacion(enviar_pobla) #por implementar
+        #poblacion_sobrevivientes son indices de los sobrevivientes, asi que se saca la verdadera población en enviar_pobla
+        #para enviarla a la generación de la nueva población
+        enviar_pobla = [poblacion[i] for i in poblacion_sobrevivientes] 
+        poblacion = crear_siguiente_poblacion(enviar_pobla)
         lista_y.append(len(poblacion_sobrevivientes))    
         lista_x.append(generacion)
 
