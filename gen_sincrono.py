@@ -6,7 +6,7 @@ from matplotlib.colors import ListedColormap
 # Definir los colores en formato RGBA
 colors = [(255, 255, 255, 255),      #Terreno
           (255, 0, 0, 128),          #Rojo
-          (255, 165, 0, 128),        #
+          (255, 165, 0, 128),        
           (255, 255, 0, 128),        #Amarillo 
           (46, 204, 113, 128),
           (0, 255, 0, 128),          #Verde
@@ -28,9 +28,9 @@ alto = 20
 porcentaje_area_de_aparicion = 20
 habitantes_primera_generacion = 20
 numero_de_movimientos = 40
-tiempo_entre_movimientos = 0.01
+tiempo_entre_movimientos = 0.0001
 agresividad = 1
-seed = 42
+seed = 322
 
 #constantes globales
 random.seed(seed)
@@ -176,14 +176,14 @@ def crear_siguiente_poblacion(sobrevivientes): #crea la siguiente poblacion
                 habitante = Habitante(i)
                 habitante.cromosoma = sobrevivientes[0].cromosoma
                 poblacion.append(habitante)
-                print("el unico habitante tiene el numero: ", i)
+                #print("el unico habitante tiene el numero: ", i)
             else:
                 habitante = Habitante(i)
                 poblacion.append(habitante)
     
         return poblacion
     
-    print("segunda gen:",sobrevivientes)
+    #print("segunda gen:",sobrevivientes)
     for i in range(len(sobrevivientes)):
         if (sobrevivientes[i].movimientos < fittest):
             fittest = sobrevivientes[i].movimientos
@@ -260,10 +260,29 @@ def pelear(habitante1, habitante2): #funcion del felipe /matar habitantes
     #ahi lo terminas, fijate lo de terreno.diccionario_coordenadas, ese es el seleccionador
     #le das una coordenada y te devuelve el individuo
     #modifica el movimiento, ahora si pilla a alguien mandalo a pelear
-def graficar_supervivientes_por_generacion(x, y):
-    plt.plot(x, y)
+def graficar_supervivientes_por_generacion(generaciones, numero_supervivientes_por_generacion, supervivientes_por_generacion):
+    lista_de_supervivientes_por_clase_y_generacion = [[],[],[],[],[],[],[],[],[]]
+    #print(supervivientes_por_generacion)
+    for i in range(len(generaciones)):
+        for j in range(len(lista_de_supervivientes_por_clase_y_generacion)):
+            lista_de_supervivientes_por_clase_y_generacion[j].append(0)
+        if len(supervivientes_por_generacion[i])>0:
+            for superviviente in supervivientes_por_generacion[i]:
+                #print(lista_de_supervivientes_por_clase_y_generacion[superviviente.clase-1][i])
+                lista_de_supervivientes_por_clase_y_generacion[superviviente.clase-1][i] +=1
+
+    #print(lista_de_supervivientes_por_clase_y_generacion)
+    #print(generaciones)
+    for i in range(9):
+        #print(lista_de_supervivientes_por_clase_y_generacion[i])
+        x = generaciones  # Definir coordenadas x desde 1 hasta 100
+        y = lista_de_supervivientes_por_clase_y_generacion[i]         # Obtener el arreglo de datos correspondiente
+        plt.plot(x, y, color=colors[i+1], alpha=1, label=f'Preferencia {diccionario_movimientos[i]}')
+        
+    plt.plot(generaciones, numero_supervivientes_por_generacion, color='black', alpha=1, label='Sobrevivientes totales')
     plt.xlabel('N° Generacion')
     plt.ylabel('Cantidad de sobrevivientes')
+    plt.legend(fontsize='small')
     plt.show()
 
 
@@ -274,24 +293,27 @@ terreno = Terreno(largo, alto)
 poblacion = []
 poblacion_sobrevivientes = []
 
-lista_x = []
-lista_y = []
+lista_numero_supervivientes_por_generacion = []
+lista_generaciones = []
+lista_poblacion_supervivientes_por_generacion = []
 #ciclo del juego
 while True:
     terreno.inicializarTerreno() #regeneramos el terreno
     if (len(poblacion_sobrevivientes) == 0): #si no hay supervivientes se crea una generacion por azar
         poblacion = crear_primera_poblacion()
-        lista_y.append(len(poblacion_sobrevivientes))    
-        lista_x.append(generacion)
         if (generacion != 1):
+            lista_numero_supervivientes_por_generacion.append(0)
+            lista_poblacion_supervivientes_por_generacion.append([])  
+            lista_generaciones.append(generacion-1)
             print('no hubo supervivientes')
             
     else:
         print(f'sobrevivientes: {poblacion_sobrevivientes}')
         enviar_pobla = [poblacion[i] for i in poblacion_sobrevivientes]
         poblacion = crear_siguiente_poblacion(enviar_pobla) #por implementar
-        lista_y.append(len(poblacion_sobrevivientes))    
-        lista_x.append(generacion)
+        lista_numero_supervivientes_por_generacion.append(len(poblacion_sobrevivientes))    
+        lista_generaciones.append(generacion-1)
+        lista_poblacion_supervivientes_por_generacion.append(enviar_pobla)
     for i in range (numero_de_movimientos): 
         for habitante in poblacion: #en cada turno movemos a todos los habitantes de la poblacion
             habitante.moverse()
@@ -303,7 +325,7 @@ while True:
             break
 
     if(not juego_activo): #para salir del ciclo definitivamente
-        graficar_supervivientes_por_generacion(lista_x, lista_y)
+        graficar_supervivientes_por_generacion(lista_generaciones, lista_numero_supervivientes_por_generacion,lista_poblacion_supervivientes_por_generacion)
         break
     poblacion_sobrevivientes = sobrevivientes()
     generacion +=1
