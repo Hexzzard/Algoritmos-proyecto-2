@@ -8,7 +8,7 @@ alto = 20
 porcentaje_area_de_aparicion = 20
 habitantes_primera_generacion = 20
 numero_de_movimientos = 40
-tiempo_entre_movimientos = 0.1
+tiempo_entre_movimientos = 0.01
 agresividad = 1
 
 class Terreno:
@@ -60,29 +60,32 @@ class Habitante:
                 break
         self.coordenada_x = posible_posicion_x #asignamos las coordenadas al habitante
         self.coordenada_y = posible_posicion_y
-        terreno.matriz[self.coordenada_y, self.coordenada_x] = self.clase #registramos al habitante en el terreno
+        terreno.matriz[self.coordenada_y, self.coordenada_x] = self.clase #registramos al habitante en el terreno<----revisar
 
         coordenada = f'({self.coordenada_x},{self.coordenada_y})' #string que indica la posicion en la que se encuentra
         terreno.diccionario_coordenadas[coordenada] = self.numero #guardamos la posicion en el registro
 
 
     def moverse(self): #logica de movimiento del habitante
-        direccion_movimiento = seleccionar_posicion_aleatoria(self.cromosoma) #tomamos una posicion aleatoria para moverse
-        vector_movimiento = diccionario_vector_movimientos[direccion_movimiento] #traducimos la direccion a un vector con ayuda de un diccionario
+        vector_movimiento = seleccionar_posicion_aleatoria(self.cromosoma) #tomamos una posicion aleatoria para moverse
+       
         
         if (self.coordenada_x != largo-1): #se mueve siempre cuando el movimiento sea valido, y si es que no ha llegado a la zona segura
             self.movimientos += 1
             if 0 <= self.coordenada_y + vector_movimiento[0] < alto and 0 <= self.coordenada_x + vector_movimiento[1] < largo:
                 if terreno.matriz[self.coordenada_y + vector_movimiento[0]][self.coordenada_x + vector_movimiento[1]] == 0:
-
+                    
                     terreno.matriz[self.coordenada_y][self.coordenada_x] = 0 #borramos la posicion anterior y registramos la nueva
+                    
                     self.coordenada_x = self.coordenada_x + vector_movimiento[1]
                     self.coordenada_y = self.coordenada_y + vector_movimiento[0]
                     terreno.matriz[self.coordenada_y][self.coordenada_x] = self.clase
 
                     coordenada = f'({self.coordenada_x},{self.coordenada_y})' #string que indica la posicion en la que se encuentra
                     terreno.diccionario_coordenadas[coordenada] = self.numero #registramos la posicion en los registros
-
+                else:
+                    print("choco contra un habitante")
+                    #funcion_matar()
 diccionario_vector_movimientos = { #traduce la posicion a moverse en un vector
     0: [1, 0],   # Norte
     1: [1, 1],   # Noreste
@@ -108,8 +111,7 @@ diccionario_movimientos = { #traduce la posicion a moverse en un string con la p
 }
 
 def fitness(habitante):
-    print(habitante.movimientos)
-    fit = ((largo-1)**2)/(habitante.movimientos)**2
+    fit = (numero_de_movimientos)/(habitante.movimientos)# otra forma seria abs(habitante.movimientos-numero_de_movimientos)
     return fit
 
 def Crear_Cromosoma_Movimiento(): #crea una lista con la probabilidad de moverse a cada posicion
@@ -120,19 +122,17 @@ def Crear_Cromosoma_Movimiento(): #crea una lista con la probabilidad de moverse
     cromosoma_Movimiento = normalizar(cromosoma_Movimiento) #normalizamos el vector
     return cromosoma_Movimiento
 
-def normalizar(vector): #normaliza un vector / suma total de sus componentes = 1
-    return vector / np.sum(vector)
-
+indices_para_movimiento = np.arange(len(diccionario_vector_movimientos))
 def seleccionar_posicion_aleatoria(vector): #selecciona una posicion aleatoria de un vector normalizado
-    rnd = np.random.random() #se toma el primer elemento, tal que su frecuencia acumulada sea mayor al valor generado
-    acumulado = 0
-    posicion = 0
-    for elemento in vector: 
-        acumulado += elemento
-        if acumulado > rnd:
-            return posicion
-        posicion += 1
-    return posicion - 1 #si todos son menores se retorna el ultimo elemento de la lista
+    vector_normalizado = normalizar(vector)
+    #print("normalizacion de vecto de probabilidad: ", vector_normalizado)
+    #print("selecionado al azar por probabilidad: ", np.random.choice(vector , size=1, replace=False, p=vector_normalizado))
+    #print("vector de probabilidad de movimiento: ", vector)
+    indice_seleccionado = np.random.choice(indices_para_movimiento, size=1, replace=False, p=vector_normalizado)
+    #print(indice_seleccionado)
+    #print(diccionario_vector_movimientos[indice_seleccionado[0]])
+    return diccionario_vector_movimientos[indice_seleccionado[0]]
+
 
 def crear_primera_poblacion(): #crea la primera poblacion de habitantes
     poblacion = [] #arreglo que contiene a la poblacion
@@ -144,34 +144,53 @@ def crear_primera_poblacion(): #crea la primera poblacion de habitantes
 def crear_siguiente_poblacion(sobrevivientes): #crea la siguiente poblacion
     poblacion = []  # arreglo que contiene a la poblacion
     fittest = 999
-    if(len(sobrevivientes) == 1):
+    if(len(sobrevivientes) == 1):#######crea poblacion de 21 habitantes <-------------
         for i in range(habitantes_primera_generacion):
-            habitante = Habitante(i)
-            poblacion.append(habitante)
-        ultimo_habitante = Habitante(habitantes_primera_generacion)
-        ultimo_habitante.cromosoma = sobrevivientes[0].cromosoma
-        poblacion.append(ultimo_habitante)
+            if i==generacion%habitantes_primera_generacion:
+                habitante = Habitante(i)
+                habitante.cromosoma = sobrevivientes[0].cromosoma
+                poblacion.append(habitante)
+                print("el unico habitante tiene el numero: ", i)
+            else:
+                habitante = Habitante(i)
+                poblacion.append(habitante)
+    
         return poblacion
-
+    
+    print("segunda gen:",sobrevivientes)
     for i in range(len(sobrevivientes)):
         if (sobrevivientes[i].movimientos < fittest):
             fittest = sobrevivientes[i].movimientos
-            fitIndex = i
     nueva_poblacion = []
-    for i in range(int(habitantes_primera_generacion/2)):
-        dos_sobrevivientes = seleccionar_habitantes(sobrevivientes)
-        nueva_poblacion.append(cruzar_cromosomas(dos_sobrevivientes)[0])
-        nueva_poblacion.append(cruzar_cromosomas(dos_sobrevivientes)[1])
 
+    for i in range(len(sobrevivientes)):
+        if i<10:
+            dos_sobrevivientes = seleccionar_habitantes(sobrevivientes)
+            nueva_poblacion.append(cruzar_cromosomas(dos_sobrevivientes)[0])
+            nueva_poblacion.append(cruzar_cromosomas(dos_sobrevivientes)[1])
+    
     for i in range(len(nueva_poblacion)):
         habitante = Habitante(i)
         habitante.cromosoma = nueva_poblacion[i]
         poblacion.append(habitante)
-
-    ultimo_habitante = Habitante(habitantes_primera_generacion)
-    ultimo_habitante.cromosoma = sobrevivientes[fitIndex].cromosoma
-    poblacion.append(ultimo_habitante)
+    if len(nueva_poblacion)!=habitantes_primera_generacion:
+        for i in range(habitantes_primera_generacion-len(nueva_poblacion)):
+            habitante = Habitante(len(nueva_poblacion)+i)
+            poblacion.append(habitante)
+    
     return poblacion
+def cruzar_cromosomas(dos_sobrevivientes):
+    dna_index = np.random.randint(1, 9)
+    cromosoma_hijo1 = []
+    cromosoma_hijo2 = []
+    
+    for i in range(dna_index):
+        cromosoma_hijo1.append(dos_sobrevivientes[0].cromosoma[i])
+        cromosoma_hijo2.append(dos_sobrevivientes[1].cromosoma[i])
+    for i in range(dna_index, 9):
+        cromosoma_hijo1.append(dos_sobrevivientes[0].cromosoma[i])
+        cromosoma_hijo2.append(dos_sobrevivientes[1].cromosoma[i])
+    return normalizar(cromosoma_hijo1), normalizar(cromosoma_hijo2)
 
 def sobrevivientes (): #busca los sobrevivientes
     sobrevivientes = [] 
@@ -184,6 +203,9 @@ def sobrevivientes (): #busca los sobrevivientes
         except KeyError: #ignoramos los errores
             continue
     return sobrevivientes
+def normalizar(vector): #normaliza un vector / suma total de sus componentes = 1
+    return vector / np.sum(vector)
+
 
 def probabilidad(sobrevivientes):
     probabilidad = []
@@ -194,17 +216,6 @@ def probabilidad(sobrevivientes):
 def seleccionar_habitantes(sobrevivientes):
     return np.random.choice(sobrevivientes, size=2, replace=False, p=probabilidad(sobrevivientes))
 
-def cruzar_cromosomas(dos_sobrevivientes):
-    dna_index = np.random.randint(1, 9)
-    cromosoma_hijo1 = []
-    cromosoma_hijo2 = []
-    for i in range(dna_index):
-        cromosoma_hijo1.append(dos_sobrevivientes[0].cromosoma[i])
-        cromosoma_hijo2.append(dos_sobrevivientes[1].cromosoma[i])
-    for i in range(dna_index, 9):
-        cromosoma_hijo1.append(dos_sobrevivientes[0].cromosoma[i])
-        cromosoma_hijo2.append(dos_sobrevivientes[1].cromosoma[i])
-    return normalizar(cromosoma_hijo1), normalizar(cromosoma_hijo2)
 
 def pelear(habitante1, habitante2): #funcion del felipe /matar habitantes
     #te añadi un parametro a los habitantes 'combate'
@@ -229,9 +240,10 @@ def graficar_supervivientes_por_generacion(x, y):
     plt.ylabel('Cantidad de sobrevivientes')
     plt.show()
 async def pasos(habitante):
+        if (habitante.coordenada_x==largo-1):
+            print("Habitante en (",habitante.coordenada_x,",", habitante.coordenada_y,") Sobrevivio-->", habitante.numero)    
         habitante.moverse()
-        if (habitante.coordenada_x==19):
-            print("Habitante en (",habitante.coordenada_x,",", habitante.coordenada_y,") Sobrevivio")
+
 
 async def asincrono():      
     for i in range(numero_de_movimientos):
@@ -269,8 +281,9 @@ while True:
         poblacion = crear_siguiente_poblacion(enviar_pobla) #por implementar
         lista_y.append(len(poblacion_sobrevivientes))    
         lista_x.append(generacion)
-
-
+    print("habitantes de la poblacion: ", len(poblacion))
+    print("cromosoma de 1 habitante: ", poblacion[0].cromosoma)
+    seleccionar_posicion_aleatoria(poblacion[0].cromosoma)
     loop = asyncio.get_event_loop() #inicializa el loop para hacer los pasos
    
     juego_activo =  loop.run_until_complete(asincrono())#comienza a hacer las tareas que se dejan para el loop en ensure_future
