@@ -175,6 +175,7 @@ def crear_siguiente_poblacion(sobrevivientes): #crea la siguiente poblacion
             if i==generacion%habitantes_primera_generacion:
                 habitante = Habitante(i)
                 habitante.cromosoma = sobrevivientes[0].cromosoma
+                habitante.clase = np.argmax(habitante.cromosoma)+1
                 poblacion.append(habitante)
                 #print("el unico habitante tiene el numero: ", i)
             else:
@@ -198,6 +199,7 @@ def crear_siguiente_poblacion(sobrevivientes): #crea la siguiente poblacion
     for i in range(len(nueva_poblacion)):
         habitante = Habitante(i)
         habitante.cromosoma = nueva_poblacion[i]
+        habitante.clase = np.argmax(habitante.cromosoma)+1
         poblacion.append(habitante)
     if len(nueva_poblacion)!=habitantes_primera_generacion:
         for i in range(habitantes_primera_generacion-len(nueva_poblacion)):
@@ -283,6 +285,7 @@ def graficar_supervivientes_por_generacion(generaciones, numero_supervivientes_p
     plt.xlabel('N° Generacion')
     plt.ylabel('Cantidad de sobrevivientes')
     plt.legend(fontsize='small')
+    plt.title(f'Resumen de supervivientes, seed: {seed}')
     plt.show()
 
 
