@@ -4,8 +4,8 @@ import random
 from matplotlib.colors import ListedColormap
 
 # Variables globales, definen TODO
-largo = 20
-alto = 20
+largo = 30
+alto = 30
 porcentaje_area_de_aparicion = 20
 habitantes_primera_generacion = 20
 numero_de_movimientos = 40
@@ -15,7 +15,8 @@ cantidad_de_clases=9
 seed = 28
 random.seed(seed)
 np.random.seed(seed)
-
+probabilida_de_esquivar = 0.5
+probabilidad_de_asesino = 0.8
 colors = [(255, 255, 255, 255),      #Terreno
           (255, 0, 0, 128),          #Rojo
           (255, 165, 0, 128),        
@@ -43,7 +44,7 @@ class Terreno:
         self.im = None
 
     def inicializarTerreno(self): #define los atributos que necesitan resetearse
-        self.matriz = (np.zeros((self.largo, self.alto)))
+        self.matriz = (np.zeros((self.alto, self.largo)))
         self.diccionario_coordenadas = {} #registro de las ubicaciones de los habitantes
        
     def MostrarGrafica(self, generacion, movimiento): #muestra la grafica del entorno
@@ -69,7 +70,6 @@ class Habitante:
         self.movimientos = 0
         self.evasion = random.random() #genera un numero al azar en el rango [0, 1).
         self.agresividad = random.random()# azar rango [0, 1).
-
     def inicializarHabitante(self): #define los atributos que no dependen del constructor
         self.cromosoma = Crear_Cromosoma_Movimiento()
         self.clase = np.argmax(self.cromosoma) #la clase es la direccion donde tiene mas probabilidad de moverse
@@ -80,7 +80,7 @@ class Habitante:
 
     def posicionar_habitante(self, largo, alto, porcentaje_area_de_aparicion): #ubica al habitante en el mapa
         limite_largo = round(largo * (porcentaje_area_de_aparicion / 100)) #se define el area de aparicion
-
+    
         while True: #iteramos hasta encontrar una posicion que este disponible
             posible_posicion_x = np.random.randint(0, limite_largo) 
             posible_posicion_y = np.random.randint(0, alto-1)
@@ -145,8 +145,9 @@ def pelear(posicion_habitante1, posicion_habitante2, habitante1): #funcion del f
     numero = terreno.diccionario_coordenadas[coordenada]
     #print(habitante1.numero, " choco con :", numero)
     habitante_objetivo = poblacion[numero]
-    if habitante1.agresividad >0.8:#si la agresividad es mayor al 80% entonces intentara matar al otro habitante
-        if habitante_objetivo.evasion >0.5:
+    if habitante1.agresividad > probabilidad_de_asesino:#si la agresividad es mayor al 80% entonces intentara matar al otro habitante
+        habitante1.numero = 1
+        if habitante_objetivo.evasion >probabilida_de_esquivar:
             print("el habitante ", habitante1.numero, " intento asesinar al habitante ", habitante_objetivo.numero, " pero falló")
         else:
             #eliminar, se setea a 0 el valor que tiene en la matriz del terreno
@@ -289,8 +290,6 @@ terreno = Terreno(largo, alto)
 poblacion = []
 poblacion_sobrevivientes = []
 
-lista_x = []
-lista_y = []
 lista_numero_supervivientes_por_generacion = []
 lista_supervivientes_por_clases_y_generacion = [[],[],[],[],[],[],[],[],[]]
 
@@ -302,7 +301,7 @@ while True:
         if (generacion != 1):
             print('no hubo supervivientes')
             print('Fin del juego, cierra le ventana para ver las estadisticas')
-            plt.pause(999999)
+            plt.pause(999999)#infito=se congela, cuando no hay habitantes
             lista_numero_supervivientes_por_generacion.append(len(poblacion_sobrevivientes)) #guardamos las estadisticas
             for i in range(cantidad_de_clases): #guardamos los sobrevivientes en base a cada clase
                 lista_supervivientes_por_clases_y_generacion[i].append(0) #inicializamos todos con 0
